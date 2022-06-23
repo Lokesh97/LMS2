@@ -56,7 +56,58 @@ public class LibraryController {
         return " ------------------- SUCCESS ------------------- ";
     }
 
+    public String returnBook(String bookId, String borrowerId, int days){
+        Book book = bookRepository.getBook(bookId);
 
+        if(book == null || !book.getIsBorrowed()){
+            return "------------------- ERROR ------------------- Book is null or not Borrowed";
+        }
+
+        Borrower borrower = borrowerRepository.getBorrower(borrowerId);
+        if(borrower == null){
+            return "------------------- ERROR ------------------- Borrower null";
+        }
+
+        List<BookLoan> bookLoans = bookLoanRepository.getBookLoansByBorrowerId(borrowerId);
+        BookLoan bookLoanObj = null;
+        if(bookLoans != null) {
+            for (BookLoan bookLoan : bookLoans) {
+                if (bookLoan.getEnd() == -1 && bookLoan.getBook().getIsbn().equals(bookId)) {
+                    bookLoanObj = bookLoan;
+                    break;
+                }
+            }
+        }
+
+        if(bookLoanObj == null){
+            return "------------------- ERROR ------------------- No Such Book Borrowed";
+        }
+
+        book.setIsBorrowed(false);
+        bookLoanObj.setEnd(days);
+        bookLoanObj.calculateFine();
+
+        return " ------------------- SUCCESS ------------------- ";
+    }
+
+    public int getLoanedBooksCount(String borrowerId){
+        Borrower borrower = borrowerRepository.getBorrower(borrowerId);
+        if(borrower == null){
+            return -1;
+        }
+
+        int loans = 0;
+        List<BookLoan> bookLoans = bookLoanRepository.getBookLoansByBorrowerId(borrowerId);
+        if(bookLoans != null) {
+            for (BookLoan bookLoan : bookLoans) {
+                if (bookLoan.getEnd() == -1) {
+                    loans = loans + 1;
+                }
+            }
+        }
+
+        return loans;
+    }
 
     public BookRepository getBookRepository() {
         return bookRepository;
